@@ -178,7 +178,8 @@ int main(){                 // server uses two threads. One handles incoming con
                 //    recv(ClientSocket, client_name, 1024, 0);
                 //    std::cout << client_name;
                 break;
-            }   
+            }
+        // <--------------------------------------> 
         }
     }
 
