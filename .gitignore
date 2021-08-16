@@ -1,3 +1,6 @@
 server/indev
 bin
 .vscode
+test.cpp
+test.txt
+test_build.bat

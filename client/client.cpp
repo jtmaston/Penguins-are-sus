@@ -11,6 +11,7 @@
 #include <thread>
 #pragma comment(lib, "Ws2_32.lib")  // This will link the required wisock lib
 #define OPEN_PORT "8123"
+#include "packet.h"
 
 std::queue <std::string> command_queue;
 
