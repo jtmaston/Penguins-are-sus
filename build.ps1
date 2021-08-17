@@ -1,5 +1,3 @@
-
-
 Write-Output "Building common components..."
 mkdir common\obj > $null
 Set-Location common\obj

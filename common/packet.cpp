@@ -23,7 +23,11 @@ Packet::Packet(std::string sender, std::string command, std::string data){
 }
 
 void Packet::hash(Packet* packet){
-    packet->checksum = std::to_string(std::hash<std::string>{}(packet->data));
+    packet->checksum = std::to_string(std::hash<std::string>{}(packet->command + packet->sender + packet->data));
+}
+
+bool hash_compare(const Packet* packet){
+    return packet->checksum == std::to_string(std::hash<std::string>{}(packet->command + packet->sender + packet->data));
 }
 
 void Packet::print(){
@@ -43,12 +47,12 @@ std::string Packet::dump(){
     return result;
 }
 
-void Packet::load(const char* data){
+bool Packet::load(const char* data){
     std::string converted = data;
-    this->load(converted);
+    return this->load(converted);
 }
 
-void Packet::load(std::string raw){
+bool Packet::load(std::string raw){
     std::cout << raw << '\n';
     int delimiter_left = 0;
     delimiter_left = raw.find_first_of(':');
@@ -76,6 +80,20 @@ void Packet::load(std::string raw){
 
     }while(delimiter_left != std::string::npos);
 
+    if (this->command != "BAD" && this->checksum != "ACK"){
+        if ( hash_compare(this) ){
+            //std::cout << "Checksum match\n";
+            return 0;
+        }
+        else {
+            //std::cout << this->checksum << " " << std::to_string(std::hash<std::string>{}(raw)) << '\n';
+            return 1;
+        }
+    }
+        
+
+    return 0;
+
 }
 
 bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
@@ -90,12 +108,14 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
         int recv_buffer_length = 25;
         char recv_buffer[25] = "";
 
-        if ( this->command != "ACK" ){
+        if ( this->command != "ACK" && this->command != "BAD"){
             Packet ACK;
             ACK.recv_into_packet(sock);
             if (ACK.command == "ACK"){
                 ackd = true;
                 std::cout << "ACKED \n";
+            }else if (ACK.command == "BAD"){
+                std::cout << "Checksum error! Re-sending!";
             }
         }else
             break;
@@ -126,15 +146,17 @@ bool Packet::recv_into_packet(SOCKET sock){
     char recv_buffer[1024] = "";
 
     int size = recv(sock, recv_buffer, recv_buffer_length, 0);
-    this->load(recv_buffer);
+    int checksum_err = this->load(recv_buffer);
 
-    if (this->command == "ACK")
+    if (this->command == "ACK" || this->command == "BAD")
         return 0; // no need ACK the ACK
-
-    if(true){                                   // TODO: checksum
+        
+    if(! checksum_err){                                   // TODO: checksum
         Packet ACK(this->sender, "ACK", "");
         ACK.send_packet(sock, false);
-        //ok = true;
+    }else{
+        Packet BAD(this->sender, "BAD", "");
+        BAD.send_packet(sock, false);
     }
 
     return 0;

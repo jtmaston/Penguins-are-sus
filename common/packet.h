@@ -24,7 +24,7 @@ class Packet{
         void hash(Packet*);
         std::string dump();
 
-        void load(std::string);
-        void load(const char* );
+        bool load(std::string);
+        bool load(const char* );
 };
 

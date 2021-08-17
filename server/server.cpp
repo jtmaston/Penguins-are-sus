@@ -87,11 +87,9 @@ int main(){                 // server uses two threads. One handles incoming con
 
         bool ok = false;
         Packet LoginPacket;
-        //do {
-            LoginPacket.recv_into_packet(ClientSocket);
-            LoginPacket.print();
+        LoginPacket.recv_into_packet(ClientSocket);
+        //LoginPacket.print();
 
-        //}while(!ok);
 
         //bool done = false;
         //while(!done){
