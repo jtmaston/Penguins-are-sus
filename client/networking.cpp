@@ -54,3 +54,33 @@ SOCKET init_connection(){
     
     return ServerSocket;
 }
+
+bool login(SOCKET sock){
+    std::string name;
+    std::cout << "Please enter your name: ";
+    std::getline(std::cin, name);
+
+    Packet loginPacket(name, "login", "");
+    loginPacket.send_packet(sock); 
+
+    loginPacket.should_block = true;
+    loginPacket.recv_into_packet(sock);                 // and get the server's response
+    loginPacket.should_block = false;
+    
+    if (loginPacket.command == "OK")
+        return true;
+    else
+        return false;
+    
+}
+
+bool logout(SOCKET ServerSocket){
+    Packet GoodbyePacket ("", "BYE", "");
+    GoodbyePacket.should_block = true;
+    GoodbyePacket.send_packet(ServerSocket);
+
+    std::cout << "Exiting";
+    shutdown(ServerSocket, SD_BOTH);
+    closesocket(ServerSocket);
+    WSACleanup();
+}

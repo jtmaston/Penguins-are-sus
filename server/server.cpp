@@ -79,7 +79,7 @@ void listner(){
 int main(){                 // server uses two threads. One handles incoming connections, accepting them
     
     SOCKET ListenerSocket = std::move(init_connection());
-    std::thread listner_thread(listner); // this handles getting and redirecting messages to the other users
+    //std::thread listner_thread(listner); // this handles getting and redirecting messages to the other users
 
     while (1){
         // <----- This section handles auth with the client -----> 
@@ -87,37 +87,35 @@ int main(){                 // server uses two threads. One handles incoming con
 
         bool ok = false;
         Packet LoginPacket;
+        LoginPacket.should_block = true;
         LoginPacket.recv_into_packet(ClientSocket);
-        //LoginPacket.print();
 
-
-        //bool done = false;
-        //while(!done){
-            //if(clients.find(LoginPacket.sender) == clients.end()){  // check: is there already a client with this name?   
+        bool client_logged_in = false;
+        while(!client_logged_in){
+            if(clients.find(LoginPacket.sender) == clients.end()){  // check: is there already a client with this name?   
+                
                 // << this section just identifies the client >>      
+
                 SOCKADDR_IN client;
                 int lensin = sizeof(client);
                 getpeername(ClientSocket, (sockaddr *)&client, &lensin);
                 std::cout << client.sin_port <<" is " << LoginPacket.sender << '\n';
+
                 // << --------------------------------------- >> 
-               // done = true;
+                
+                clients[LoginPacket.sender] = std::move(ClientSocket); // finally, add it to the connections list
 
-                //sender(ClientSocket, "OK");                               // send OK to the client
-                //u_long mode = 1;                                          // then set it to be non-blocking, since AUTH is done
-                //ioctlsocket(ClientSocket, FIONBIO, &mode);
+                LoginPacket = Packet("SERVER", "OK", "");
+                LoginPacket.send_packet(ClientSocket);
+                client_logged_in = true;
 
-                clients[std::string(LoginPacket.sender)] = std::move(ClientSocket); // finally, add it to the connections list
-                //waiting = false;
-            /*}else{
-                //if(strlen(client_name) > 0){              TODO: fix multiple users with same name
-                //    send(ClientSocket, "UNAME_TAKEN");
-                //    memset(&client_name[0], 0, sizeof(client_name));
-                //    recv(ClientSocket, client_name, 1024, 0);
-                //    std::cout << client_name;
-                break;
+            }else{
+                LoginPacket = Packet("SERVER", "UNAME_TAKEN", "");
+                LoginPacket.send_packet(ClientSocket);
             }
+        }
         // <--------------------------------------> 
-        }*/
+        
     }
 
     std::cout << "Exiting...\n";

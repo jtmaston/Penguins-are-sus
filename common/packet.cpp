@@ -53,7 +53,7 @@ bool Packet::load(const char* data){
 }
 
 bool Packet::load(std::string raw){
-    std::cout << raw << '\n';
+    //std::cout << raw << '\n';
     int delimiter_left = 0;
     delimiter_left = raw.find_first_of(':');
     do{
@@ -102,6 +102,8 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
 
     bool ackd = !wait_for_ack;                  // if the other party has acknowledged that the message is ok
     
+    std::cout << "OUT: " << transport << '\n';
+
     do{
         iResult = send( sock, transport.c_str(), transport.length(), 0 );
 
@@ -113,7 +115,7 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
             ACK.recv_into_packet(sock);
             if (ACK.command == "ACK"){
                 ackd = true;
-                std::cout << "ACKED \n";
+                //std::cout << "ACKED \n";
             }else if (ACK.command == "BAD"){
                 std::cout << "Checksum error! Re-sending!";
             }
@@ -125,8 +127,8 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
     
     if (iResult == SOCKET_ERROR) {
         std::cerr << "Send failed with error:" <<  WSAGetLastError() << '\n';
-        //closesocket(sock);
-        //WSACleanup();
+        closesocket(sock);
+        WSACleanup();
         return 1;
     }
     return 0;
@@ -146,6 +148,7 @@ bool Packet::recv_into_packet(SOCKET sock){
     char recv_buffer[1024] = "";
 
     int size = recv(sock, recv_buffer, recv_buffer_length, 0);
+    std::cout << "IN: " << recv_buffer << '\n';
     int checksum_err = this->load(recv_buffer);
 
     if (this->command == "ACK" || this->command == "BAD")

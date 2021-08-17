@@ -7,8 +7,8 @@ SOCKET init_connection(){
         std::cerr << "Failed initializing winsock. Exiting...\n";
         WSACleanup();
         exit(1);
-    } else
-        std::cout << "Initialized winsock.\n";
+    } //else
+        //std::cout << "Initialized winsock.\n";
 
 
     addrinfo socket_info;   // used to configure the socket
@@ -27,8 +27,8 @@ SOCKET init_connection(){
         std::cerr << "Addrinfo failed! Exiting...\n";           // sockets.
         WSACleanup();
         exit(1);
-    }else
-        std::cout << "Resolved local address and port. \n";
+    }//else
+        //std::cout << "Resolved local address and port. \n";
 
     SOCKET ListenerSocket = INVALID_SOCKET; 
     ListenerSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
@@ -45,11 +45,14 @@ SOCKET init_connection(){
         freeaddrinfo(result);
         WSACleanup();
         exit(1);
-    }else
-        std::cout << "Socket is now bound. \n";
+    }//else
+        //std::cout << "Socket is now bound. \n";
 
     freeaddrinfo(result);
     listen(ListenerSocket, 100);        // start listening on the passive socket, for up to 100 users
+
+    std::cout << "Server started!";
+
     return ListenerSocket;
 }
 

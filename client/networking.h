@@ -9,7 +9,10 @@
 #include <winsock2.h>               // winsock lib
 #include <ws2tcpip.h>               // winsock TCP/IP stack library
 #include <iphlpapi.h>               // IP helper tools
+#include "packet.h"
 
 
 #define OPEN_PORT "8123"
 SOCKET init_connection();           // initialize the connection
+bool login(SOCKET);
+bool logout(SOCKET);
