@@ -7,7 +7,7 @@ Set-Location ../..
 Write-Output "Building client..."
 mkdir client\obj > $null
 Set-Location client/obj
-clang++ ../*.cpp -c -std=c++1z -I ../../common
+clang++ ../*.cpp -c -std=c++1z -I ../../common -O3
 Set-Location ../..
 clang++ client/obj/*.o common/obj/*.o -o bin/client.exe
 

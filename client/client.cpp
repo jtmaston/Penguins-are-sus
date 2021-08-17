@@ -6,7 +6,7 @@
 
 bool running = true;
 
-void keyboard_handler(SOCKET ServerSocket, std::string username){
+/*void keyboard_handler(SOCKET ServerSocket, std::string username){
     std::string message;
     do{
         std::getline(std::cin, message);
@@ -15,13 +15,13 @@ void keyboard_handler(SOCKET ServerSocket, std::string username){
     }while(message != "/quit");       // this will quit when you type /quit ( I think )
     running = false;
     return;
-}
+}*/
 
 SOCKET ServerSocket;
 
 void kbInterrupt(int signum){
     std::cout << "Caught keyboard interrupt";
-    logout(ServerSocket);
+    //logout(ServerSocket);
     exit(0);
 }
 
@@ -30,7 +30,6 @@ int main(){
     signal(SIGINT, kbInterrupt);
 
     ServerSocket = std::move(init_connection());
-                         // send the login command
     
     
     bool login_ok = false;
@@ -39,9 +38,11 @@ int main(){
         login_ok = login(ServerSocket);
         if (! login_ok )
             std::cout << "Sorry! Username is taken! \n";
+        else
+            std::cout << "Welcome!";
     }
 
-    while(1){}
+    //while(1){}     // client loop
 
     logout(ServerSocket);
     return 0;

@@ -51,7 +51,7 @@ SOCKET init_connection(){
     freeaddrinfo(result);
     listen(ListenerSocket, 100);        // start listening on the passive socket, for up to 100 users
 
-    std::cout << "Server started!";
+    std::cout << "Server started!\n";
 
     return ListenerSocket;
 }

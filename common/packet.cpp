@@ -1,126 +1,62 @@
 #include "packet.h"
-/*
-Packet strucutre is
-    Packet {
-        command: ,
-        sender: , 
-        hash: ,
-        data: (optional),
-    }
-
-    On the wire, it would look like
-    { c:[command]; s:[sender], h:[hash]; d:[data]; }
-
-*/
 Packet::Packet(){}
 
-Packet::Packet(std::string sender, std::string command, std::string data){
-    this->sender = sender;
+Packet::Packet(const char sender[], int command, const char data[]){
+    strcpy_s(this->sender, sender);
     this->command = command;
-    this->data = data;
-    hash(this);
-
+    strcpy_s(this->data, data);
+    //hash(this);                                                  TODO
 }
 
 void Packet::hash(Packet* packet){
-    packet->checksum = std::to_string(std::hash<std::string>{}(packet->command + packet->sender + packet->data));
+    char transport[1024] = "";
+    char command[2] =  { (char)(packet->command + '0') };
+    strcat_s(transport, packet->sender);
+    strcat_s(transport, command);
+    strcat_s(transport, packet->data);
+    packet->checksum = std::hash<char*>{}(transport);
 }
 
 bool hash_compare(const Packet* packet){
-    return packet->checksum == std::to_string(std::hash<std::string>{}(packet->command + packet->sender + packet->data));
+    char transport[1024] = "";
+    char command[2] =  { (char)(packet->command + '0') };
+    strcat_s(transport, packet->sender);
+    strcat_s(transport, command);
+    strcat_s(transport, packet->data);
+
+    return ( packet->checksum == std::hash<char*>{}(transport) );
 }
 
 void Packet::print(){
     std::cout << "sender: " << this->sender << "\ncommand: " << this->command << "\ndata: " << this->data << "\nchecksum: " << this->checksum << '\n';
 }
 
-std::string Packet::dump(){
-    std::string result = "{ c:";
-    result += this->command;
-    result += "; s:";
-    result += this->sender;
-    result += "; h:";
-    result += this->checksum;
-    result += "; d:";
-    result += this->data;
-    result += "; }";
-    return result;
-}
-
-bool Packet::load(const char* data){
-    std::string converted = data;
-    return this->load(converted);
-}
-
-bool Packet::load(std::string raw){
-    //std::cout << raw << '\n';
-    int delimiter_left = 0;
-    delimiter_left = raw.find_first_of(':');
-    do{
-        int delimiter_right = raw.find(';', delimiter_left + 1);
-
-        switch(raw[delimiter_left - 1]){
-            case 'c':
-                this->command = raw.substr(delimiter_left + 1, delimiter_right - delimiter_left - 1);
-                break;
-            case 's':
-                this->sender = raw.substr(delimiter_left + 1, delimiter_right - delimiter_left - 1);
-                break;
-            case 'h':
-                this->checksum = raw.substr(delimiter_left + 1, delimiter_right - delimiter_left - 1);
-                break;
-            case 'd':
-                this->data = raw.substr(delimiter_left + 1, delimiter_right - delimiter_left - 1);
-                break;
-            default:
-                std::cout << "Unrecognized argument " << raw[delimiter_left - 1] << '\n';
-        }
-
-        delimiter_left = raw.find(':', delimiter_left + 2);
-
-    }while(delimiter_left != std::string::npos);
-
-    if (this->command != "BAD" && this->checksum != "ACK"){
-        if ( hash_compare(this) ){
-            //std::cout << "Checksum match\n";
-            return 0;
-        }
-        else {
-            //std::cout << this->checksum << " " << std::to_string(std::hash<std::string>{}(raw)) << '\n';
-            return 1;
-        }
-    }
-        
-
-    return 0;
-
-}
-
 bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
     int iResult;
-    std::string transport = this -> dump();
+    //std::string transport = this -> dump();
+    const char* transport = (const char*)this;
 
     bool ackd = !wait_for_ack;                  // if the other party has acknowledged that the message is ok
-    
-    std::cout << "OUT: " << transport << '\n';
+
 
     do{
-        iResult = send( sock, transport.c_str(), transport.length(), 0 );
+        iResult = send( sock, transport, sizeof(*this), 0 );
 
         int recv_buffer_length = 25;
         char recv_buffer[25] = "";
 
-        if ( this->command != "ACK" && this->command != "BAD"){
+        if ( this->command != 0 && this->command != 1){
             Packet ACK;
             ACK.recv_into_packet(sock);
-            if (ACK.command == "ACK"){
+            if (ACK.command == 0){
                 ackd = true;
-                //std::cout << "ACKED \n";
-            }else if (ACK.command == "BAD"){
+                std::cout << "ACKED \n";
+            }else if (ACK.command == 1){
                 std::cout << "Checksum error! Re-sending!";
             }
         }else
             break;
+        break;
 
     }while (! ackd );
 
@@ -136,30 +72,38 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
 
 bool Packet::recv_into_packet(SOCKET sock){
 
-    if (this->should_block){
+    /*if (this->should_block){
          u_long mode = 0;                                        
          ioctlsocket(sock, FIONBIO, &mode);
     }else{
          u_long mode = 1;                                        
          ioctlsocket(sock, FIONBIO, &mode);
-    }
+    }*/
 
     int recv_buffer_length = 1024;
     char recv_buffer[1024] = "";
 
     int size = recv(sock, recv_buffer, recv_buffer_length, 0);
-    std::cout << "IN: " << recv_buffer << '\n';
-    int checksum_err = this->load(recv_buffer);
 
-    if (this->command == "ACK" || this->command == "BAD")
+    Packet* packet = (Packet*) recv_buffer;
+    
+    strcpy_s(sender, packet->sender);
+    strcpy_s(data, packet->data);
+    command = packet->command;
+    checksum = packet->checksum;
+
+
+    int checksum_err = hash_compare(this);
+
+    if (this->command == ACK || this->command == BAD)
         return 0; // no need ACK the ACK
-        
+
     if(! checksum_err){                                   // TODO: checksum
-        Packet ACK(this->sender, "ACK", "");
-        ACK.send_packet(sock, false);
+        Packet acknowledge( this->sender, ACK, "");
+        acknowledge.send_packet(sock, false);
     }else{
-        Packet BAD(this->sender, "BAD", "");
-        BAD.send_packet(sock, false);
+        Packet resend( this->sender, BAD, "" );
+        resend.send_packet(sock, false);
     }
 
     return 0;

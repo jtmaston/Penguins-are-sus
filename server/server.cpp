@@ -89,6 +89,8 @@ int main(){                 // server uses two threads. One handles incoming con
         Packet LoginPacket;
         LoginPacket.should_block = true;
         LoginPacket.recv_into_packet(ClientSocket);
+        LoginPacket.print();
+        //LoginPacket.print();
 
         bool client_logged_in = false;
         while(!client_logged_in){
@@ -105,12 +107,12 @@ int main(){                 // server uses two threads. One handles incoming con
                 
                 clients[LoginPacket.sender] = std::move(ClientSocket); // finally, add it to the connections list
 
-                LoginPacket = Packet("SERVER", "OK", "");
+                LoginPacket = Packet("SERVER", Commands::OK, "");
                 LoginPacket.send_packet(ClientSocket);
                 client_logged_in = true;
 
             }else{
-                LoginPacket = Packet("SERVER", "UNAME_TAKEN", "");
+                LoginPacket = Packet("SERVER", Commands::UNAME_TAKEN, "");
                 LoginPacket.send_packet(ClientSocket);
             }
         }

@@ -60,14 +60,18 @@ bool login(SOCKET sock){
     std::cout << "Please enter your name: ";
     std::getline(std::cin, name);
 
-    Packet loginPacket(name, "login", "");
+    Packet loginPacket(name.c_str(), 2, "");
     loginPacket.send_packet(sock); 
+    //loginPacket.print();
 
     loginPacket.should_block = true;
     loginPacket.recv_into_packet(sock);                 // and get the server's response
     loginPacket.should_block = false;
+    loginPacket.print();
     
-    if (loginPacket.command == "OK")
+
+    //return true;
+    if (loginPacket.command == Commands::OK)
         return true;
     else
         return false;
@@ -75,9 +79,9 @@ bool login(SOCKET sock){
 }
 
 bool logout(SOCKET ServerSocket){
-    Packet GoodbyePacket ("", "BYE", "");
-    GoodbyePacket.should_block = true;
-    GoodbyePacket.send_packet(ServerSocket);
+    Packet GoodbyePacket ("", 6, "");
+    //GoodbyePacket.should_block = true;
+    //GoodbyePacket.send_packet(ServerSocket);
 
     std::cout << "Exiting";
     shutdown(ServerSocket, SD_BOTH);
