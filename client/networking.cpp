@@ -83,4 +83,6 @@ bool logout(SOCKET ServerSocket){
     shutdown(ServerSocket, SD_BOTH);
     closesocket(ServerSocket);
     WSACleanup();
+    
+    return 0;
 }

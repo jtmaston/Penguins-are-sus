@@ -136,13 +136,13 @@ bool Packet::send_packet(SOCKET sock, bool wait_for_ack){
 
 bool Packet::recv_into_packet(SOCKET sock){
 
-    /*if (this->should_block){
+    if (this->should_block){
          u_long mode = 0;                                        
          ioctlsocket(sock, FIONBIO, &mode);
     }else{
          u_long mode = 1;                                        
          ioctlsocket(sock, FIONBIO, &mode);
-    }*/
+    }
 
     int recv_buffer_length = 1024;
     char recv_buffer[1024] = "";

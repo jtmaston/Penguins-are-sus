@@ -11,5 +11,5 @@
 
 #define OPEN_PORT "8123"
 
-SOCKET init_connection();
-SOCKET accept_connection(SOCKET);
+SOCKET init_connection();           // initialize winsock components. Returns a passive ( listener ) socket to be used for accepting conns
+SOCKET accept_connection(SOCKET);   // accept a client. Returns an active socket, to be used for comms
